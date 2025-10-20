@@ -1,0 +1,4 @@
+key
+plaintext
+nonce
+ad = adicional pode ser 0
