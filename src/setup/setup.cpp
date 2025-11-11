@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include "setup/setup.h"
 #include "algorithms/chacha20/ChaCha20.h"
-#include "algorithms/Elephant/elephant_160.h"
+#include "algorithms/elephant/elephant_160.h"
 #include "algorithms/gift64/GIFT64.h"
 #include "algorithms/speck/speck.h"
 #include "algorithms/tiny_jambu/tiny_jambu.h"
