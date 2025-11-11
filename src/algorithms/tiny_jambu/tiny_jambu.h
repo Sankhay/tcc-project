@@ -15,6 +15,7 @@ extern "C" {
 
 // For size_t and other standard types, though not strictly required by the function signatures below.
 #include <string.h>
+#include "structs/structs.h"
 
 // --- Public Constants ---
 
@@ -24,7 +25,7 @@ extern "C" {
 #define TJ_CRYPTO_KEYBYTES 16      // Key size (128 bits)
 #define TJ_CRYPTO_NPUBBYTES 12     // Nonce size (96 bits)
 #define TJ_CRYPTO_ABYTES 8         // Default associated data size for reference
-#define CRYPTO_BYTES 64         // Default plaintext/ciphertext buffer size for reference
+#define CRYPTO_BYTES 32         // Default plaintext/ciphertext buffer size for reference
 #define TJ_CRYPTO_NSECBYTES 0      // Secret message number (not used)
 #define TJ_CRYPTO_NOOVERLAP 1      // Indicates that ciphertext and plaintext buffers must not overlap
 
@@ -56,7 +57,7 @@ int crypto_aead_encrypt_tiny_jambu(
     const unsigned char *k
 );
 
-void useTinyJambu(const char plaintext_in[CRYPTO_BYTES], const char keyhex_in[2*TJ_CRYPTO_KEYBYTES], const char nonce_in[2*TJ_CRYPTO_KEYBYTES], const char add_in[TJ_CRYPTO_ABYTES]);
+void useTinyJambu(unsigned char plaintext_in[CRYPTO_BYTES], unsigned char key[TJ_CRYPTO_KEYBYTES], unsigned char nonce[TJ_CRYPTO_NPUBBYTES], unsigned char add[TJ_CRYPTO_ABYTES], AlgorithmReturn* algorithmReturn);
 
 
 /**

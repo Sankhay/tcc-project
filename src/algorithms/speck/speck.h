@@ -2,7 +2,7 @@
 #define SPECK_H
 
 #include <stdint.h>
-
+#include "structs/structs.h"
 /**
  * @file speck.h
  * @brief Declarations for the Speck 128/128 block cipher.
@@ -34,6 +34,6 @@ void decrypt(uint64_t pt[2], uint64_t const ct[2], uint64_t const K[2]);
  * It encrypts and then decrypts a sample text, printing the results
  * to the Serial monitor.
  */
-void useSpeck(uint64_t*, uint64_t*); 
+void useSpeck(uint64_t*, uint64_t*, AlgorithmReturn*); 
 
 #endif // SPECK_H

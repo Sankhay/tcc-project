@@ -192,23 +192,35 @@ uint64_t GIFT64_Encryption(uint64_t plaintext, uint16_t * key) {
 uint64_t GIFT64_Decryption(uint64_t ciphertext, uint16_t * key) {
     uint64_t text = ciphertext;
     uint16_t** W = KeySchedule(key);
-    //printf("Decrypted: %"SCNu64 " round: %d\n", text, 0);
-    //Round 1-28
+
     int i;
     for(i = 28; i >=1; i--) {
         uint16_t * Roundkey = W[i-1];
         text = AddRoundKey(text, Roundkey, i);
         text = InvPermBits(text);
-        //printf("Decrypted after Perm: %"SCNu64 " round: %d\n", text, i);
         text = InvSubCells(text);
         
     }
-    //printf("\n");
     FreeKeySchedule(W);
     return text;
 }
 
-void useGift64(uint64_t plaintext, uint16_t key[8] ) {
+void useGift64(uint64_t plaintext, uint16_t key[8], AlgorithmReturn* algorithmReturn) {
+
     uint64_t EncryptedValue = GIFT64_Encryption(plaintext, key);
+    algorithmReturn->encryptionTime = millis();
+
+    algorithmReturn->encryptedData = malloc(sizeof(uint64_t));
+
+    if (algorithmReturn->encryptedData != NULL) {
+        // 2. CÓPIA SEGURA: Agora o ponteiro aponta para a memória alocada.
+        memcpy(algorithmReturn->encryptedData, &EncryptedValue, sizeof(uint64_t));
+    } else {
+        Serial.println("não alocou memoria");
+
+    }
+    //memcpy(algorithmReturn->encryptedData, &EncryptedValue, sizeof(uint64_t));
+    
     uint64_t DecryptedValue = GIFT64_Decryption(EncryptedValue, key);
+    algorithmReturn->success = (plaintext == DecryptedValue);
 };

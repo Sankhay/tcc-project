@@ -37,7 +37,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
-
+#include "structs/structs.h"
 /** @brief Alias for ChaCha20 key type */
 typedef uint8_t key256_t[32];
 
@@ -90,7 +90,7 @@ void ChaCha20_init(ChaCha20_Ctx* ctx, const key256_t key, const nonce96_t nonce,
  * @param bufflen  Length of the buffer
  */
 void ChaCha20_xor(ChaCha20_Ctx* ctx, uint8_t* buffer, size_t bufflen);
-void useChaCha20(key256_t, nonce96_t, uint8_t*);
+void useChaCha20(key256_t, nonce96_t, uint8_t*, int, AlgorithmReturn*);
 
 #ifdef __cplusplus
 } // extern "C"

@@ -1,37 +1,49 @@
 #include "Arduino.h"
 #include "utils/utils.h"
 #include "setup/setup.h"
+#include "structs/structs.h"
+#include <SD.h>
+#include "config.h"
 
-// Generic function pointer type for any algorithm we want to measure.
-typedef void (*MeasurableFunction)(void* context);
+/**
+ * @brief Displays a formatted report of performance metrics to the Serial monitor.
+ * * This optimized version uses sprintf() to format the output efficiently, 
+ * avoiding multiple String allocations within the loop.
+ * It also prints "True" or "False" for better readability.
+ * * @param metricsArray Pointer to the array of PerformanceMetrics structs.
+ * @param numItems The number of items in the array.
+ */
 
-// --- The Benchmark Definition Struct ---
-struct AlgorithmBenchmark {
-  const char* name;
-  MeasurableFunction benchmark_function;
-  void* (*setup_function)(void);
-  void (*teardown_function)(void* context);
-};
+ char* bytesToHex(const void* src, size_t len) {
+    // Cada byte (2 dígitos hex) + espaço + '\0'
+    char* dest = (char*)malloc(len * 2 + 1);
+    if (dest == NULL) return NULL; 
 
+    const uint8_t* byteSrc = (const uint8_t*)src;
+    
+    for (size_t i = 0; i < len; i++) {
+        sprintf(&dest[i * 2], "%02X", byteSrc[i]);
+    }
+    dest[len * 2] = '\0';
+
+    return dest;
+}
+
+struct Algorithm speck = {"SPECK",  2 * sizeof(uint64_t),  2 * sizeof(uint64_t),  2 * sizeof(uint64_t)};
+struct Algorithm chacha20 = {"CHACHA20", CHACHA20_DATA_SIZE * sizeof(uint8_t), 32 * sizeof(uint8_t),  CHACHA20_DATA_SIZE * sizeof(uint8_t)};
+struct Algorithm gift64 = {"GIFT64", sizeof(uint64_t), 8 * sizeof(uint16_t), sizeof(uint64_t)};
+struct Algorithm elephant = {"Elephant", 16 * sizeof(unsigned char), 8 * sizeof(unsigned char), 24 * sizeof(unsigned char)};
+struct Algorithm tinyJambu = {"TINYJAMBU", 32 * sizeof(uint8_t), 16 * sizeof(uint16_t), 40 * sizeof(unsigned char)};
 // --- The Array of All Algorithms to Test ---
 AlgorithmBenchmark benchmarks[] = {
-    {"SPECK",      speck_wrapper,      setup_speck,      teardown_speck},
-    {"CHACHA20",   chacha20_wrapper,   setup_chacha20,   teardown_chacha20},
-    {"GIFT64",     gift64_wrapper,     setup_gift64,     teardown_gift64},
-    {"ELEPHANT",   elephant_wrapper,   setup_elephant,   teardown_elephant},
-    {"TINYJAMBU",  tiny_jambu_wrapper, setup_tinyjambu,  teardown_tinyjambu}
+    {speck,      speck_wrapper,      setup_speck,      teardown_speck},
+    //{chacha20,   chacha20_wrapper,   setup_chacha20,   teardown_chacha20},
+    //{gift64,     gift64_wrapper,     setup_gift64,     teardown_gift64},
+    //{elephant,   elephant_wrapper,   setup_elephant,   teardown_elephant},
+    //{tinyJambu,  tiny_jambu_wrapper, setup_tinyjambu,  teardown_tinyjambu}
 };
 
-// --- Configuration ---
-const int NUM_ITERATIONS = 50;
-// Calculate number of algorithms automatically!
 const int NUM_ALGORITHMS = sizeof(benchmarks) / sizeof(benchmarks[0]);
-
-struct PerformanceMetrics {
-  char* algorithmName;
-  unsigned long totalExecutionTimeMicros;
-  int ramUsedBytes;
-};
 
 int freeRam() {
   extern int __heap_start, *__brkval;
@@ -39,97 +51,214 @@ int freeRam() {
   return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
 }
 
-PerformanceMetrics measurePerformance(MeasurableFunction functionToMeasure, void* context, const char* algorithmName) {
+PerformanceMetrics measurePerformance(MeasurableFunction functionToMeasure, void* context) {
   PerformanceMetrics metrics;
-  
-  int ramBefore = freeRam();
-  unsigned long startTime = micros();
-  
-  functionToMeasure(context);
-  
-  unsigned long endTime = micros();
-  int ramAfter = freeRam();
 
-  metrics.totalExecutionTimeMicros = endTime - startTime;
-  metrics.ramUsedBytes = ramBefore - ramAfter; 
-  metrics.algorithmName = (char*)algorithmName;
+  AlgorithmReturn algorithmReturnOrigin;
+
+  metrics.startTime = millis();
+  int ramBefore = freeRam();
+  functionToMeasure(context, &algorithmReturnOrigin);
+  metrics.endTime = millis();
+  int ramAfter = freeRam();
+  metrics.ramUsedBytes = ramBefore - ramAfter;
+
+
+  metrics.algorithmReturn = algorithmReturnOrigin; 
 
   return metrics;
 }
 
-void displayMetrics(PerformanceMetrics* metricsArray, int numItems) {
-  Serial.println("\n--- Algorithm Performance Report ---");
-  Serial.println("-------------------------------------------------------");
-  Serial.println("Algorithm      | Exec. Time (us) | RAM Used (bytes)");
-  Serial.println("-------------------------------------------------------");
+void displayAndSaveMetric(File& dataFile, const PerformanceMetrics& metric) {
+    unsigned long totalExecutionTime = metric.endTime - metric.startTime;
+    unsigned long encryptionTime = metric.algorithmReturn.encryptionTime - metric.startTime;
+    unsigned long decryptionTime = metric.endTime - metric.algorithmReturn.encryptionTime;
+    const char* successString = metric.algorithmReturn.success ? "True" : "False";
 
-  for (int i = 0; i < numItems; i++) {
-    Serial.print(metricsArray[i].algorithmName);
+    // --- Generate Hex for Encrypted Data ---
+    char* hexData = NULL;
+    if (metric.algorithmReturn.encryptedData != NULL && metric.algorithm.encryptedDataSize > 0) {
+        hexData = bytesToHex(metric.algorithmReturn.encryptedData, metric.algorithm.encryptedDataSize);
+    } else {
+        hexData = strdup("N/A");
+    }
     
-    int padding = 15 - strlen(metricsArray[i].algorithmName);
-    for(int j = 0; j < padding; j++) Serial.print(" ");
-    Serial.print("| ");
+    // --- Generate Hex for Plaintext (NEW) ---
+    char* plaintextHex = NULL;
+    if (metric.plaintext != NULL && metric.algorithm.plainTextSize > 0) {
+        plaintextHex = bytesToHex(metric.plaintext, metric.algorithm.plainTextSize);
+    } else {
+        plaintextHex = strdup("N/A");
+    }
 
-    Serial.print(metricsArray[i].totalExecutionTimeMicros);
-    padding = 16 - String(metricsArray[i].totalExecutionTimeMicros).length();
-    for(int j = 0; j < padding; j++) Serial.print(" ");
-    Serial.print("| ");
+    // --- Generate Hex for Key (NEW) ---
+    char* keyHex = NULL;
+    if (metric.key != NULL && metric.algorithm.keySize > 0) {
+        keyHex = bytesToHex(metric.key, metric.algorithm.keySize);
+    } else {
+        keyHex = strdup("N/A");
+    }
+    // ----------------------------------------------------
+
+
+    // Increased buffer size significantly for long hex strings
+    char serialBuffer[512]; 
+    char csvBuffer[512]; 
+
+    // Saída Serial: Adicionando colunas para dados cifrados, plaintext e key
+    // Using %-15s for the hex columns to provide better structure.
+    sprintf(serialBuffer, "%-15s| %-12lu | %-12lu | %-12lu | %-12d | %-7s | %-15s | %-15s | %s",
+            metric.algorithm.algorithName,
+            encryptionTime,
+            decryptionTime,
+            totalExecutionTime,
+            metric.ramUsedBytes,
+            successString,
+            plaintextHex,      // NEW: Plaintext Hex
+            keyHex,            // NEW: Key Hex
+            hexData);          // Encrypted Data Hex
+
+    // Saída CSV: Adicionando colunas (Note: Removed hexDataSize which was unused in final display)
+    sprintf(csvBuffer, "%s,%lu,%lu,%lu,%d,%s,%s,%s,%s",
+            metric.algorithm.algorithName,
+            encryptionTime,
+            decryptionTime,
+            totalExecutionTime,
+            metric.ramUsedBytes,
+            successString,
+            plaintextHex,
+            keyHex,
+            hexData);
+
+    Serial.println(serialBuffer);
     
-    Serial.println(metricsArray[i].ramUsedBytes);
-  }
-  
-  Serial.println("-------------------------------------------------------");
+    if (dataFile) {
+        dataFile.println(csvBuffer);
+    }
+
+    // --- LIMPEZA DE MEMÓRIA CRÍTICA ---
+    // 1. Libera as strings Hex geradas (CRITICAL for memory)
+    if (hexData != NULL) {
+        free(hexData);
+    }
+    if (plaintextHex != NULL) {
+        free(plaintextHex);
+    }
+    if (keyHex != NULL) {
+        free(keyHex);
+    }
+
+    
+    // 2. Libera o buffer de dados cifrados alocado na função de benchmark (if needed)
+    if (metric.algorithmReturn.encryptedData != NULL) {
+        free(metric.algorithmReturn.encryptedData);
+    }
+
+    // -----------------------------------
+}
+
+void readAndDisplayFile(const char* filename) {
+    Serial.print("\n--- Conteúdo Completo do Arquivo SD (");
+    Serial.print(filename);
+    Serial.println(") ---");
+    
+    File dataFile = SD.open(filename);
+
+    if (dataFile) {
+        while (dataFile.available()) {
+            Serial.write(dataFile.read());
+        }
+        
+        dataFile.close();
+        
+        Serial.println("\n--- Fim da Leitura do Arquivo ---");
+    } else {
+        Serial.print("Erro ao abrir ");
+        Serial.print(filename);
+        Serial.println(" para leitura!");
+    }
 }
 
 void setup() {
-  Serial.begin(9600);
-  while (!Serial) { ; }
+    Serial.begin(9600);
+    while (!Serial) { ; }
 
-  size_t total_metrics = NUM_ITERATIONS * NUM_ALGORITHMS;
-  PerformanceMetrics* performances = (PerformanceMetrics*)malloc(sizeof(PerformanceMetrics) * total_metrics);
-
-  if (performances == NULL) {
-      Serial.println("Error: Failed to allocate memory for performance results!");
-      while(1); // Halt
-  }
-
-  // THE NEW, CLEAN LOOP
-  for (int i = 0; i < NUM_ITERATIONS; i++) {
-    Serial.print("Running iteration ");
-    Serial.println(i + 1);
-    
-    for (int j = 0; j < NUM_ALGORITHMS; j++) {
-      // Get the current algorithm's benchmark configuration
-      AlgorithmBenchmark& current_benchmark = benchmarks[j];
-
-      // 1. Setup: Create the context and parameters
-      void* context = current_benchmark.setup_function();
-      if (context == NULL) {
-          Serial.print("Failed to allocate context for ");
-          Serial.println(current_benchmark.name);
-          continue; // Skip to the next algorithm
-      }
-
-      // 2. Measure: Run the actual performance test
-      PerformanceMetrics result = measurePerformance(
-          current_benchmark.benchmark_function, 
-          context, 
-          current_benchmark.name
-      );
-
-      // 3. Store: Save the result in the correct array slot
-      int index = i * NUM_ALGORITHMS + j;
-      performances[index] = result;
-
-      // 4. Teardown: Clean up the memory used by the parameters
-      current_benchmark.teardown_function(context);
+    Serial.print("Inicializando cartão SD...");
+    if (!SD.begin(SD_CS_PIN)) {
+        Serial.println("Falha! Verifique:");
+        Serial.println("- Cartão SD inserido?");
+        Serial.println("- Conexões corretas?");
+        Serial.println("- Cartão formatado (FAT16/FAT32)?");
+        while (1) { ; }
     }
-  }
-  
-  displayMetrics(performances, total_metrics);
-  free(performances);
+    Serial.println("OK!");
+
+    Serial.print("Verificando e removendo arquivo de resultados anterior...");
+    if (SD.exists(RESULTS_FILENAME)) {
+        if (SD.remove(RESULTS_FILENAME)) {
+            Serial.print(" Sucesso! ("); Serial.print(RESULTS_FILENAME); Serial.println(" removido)");
+        } else {
+            Serial.print(" ERRO ao remover "); Serial.print(RESULTS_FILENAME); Serial.println("!");
+        }
+    } else {
+         Serial.print(" "); Serial.print(RESULTS_FILENAME); Serial.println(" não existe.");
+    }
+    
+
+    File dataFile = SD.open(RESULTS_FILENAME, FILE_WRITE);
+    
+    Serial.println("\n--- Algorithm Performance Report ---");
+    // Updated header to include Plaintext and Key, and remove size
+    Serial.println("-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
+    Serial.println("Algorithm      | Encrypt (us) | Decrypt (us) | Total (us)   | RAM (bytes)    | Success | Plaintext (Hex) | Key (Hex) | Encrypted Data (Hex)");
+    Serial.println("---------------|--------------|--------------|--------------|----------------|---------|-----------------|-----------|---------------------");
+
+    // Linhas de cabeçalho do CSV (REMOVED size)
+    if (dataFile) {
+        dataFile.println("Algorithm,Encrypt (us),Decrypt (us),Total (us),RAM (bytes),Success,Plaintext (Hex),Key (Hex),Encrypted Data (Hex)");
+    } else {
+        Serial.println("Erro ao abrir arquivo no cartão SD para escrita! Resultados não serão salvos.");
+    }
+    
+    for (int i = 0; i < NUM_ITERATIONS; i++) {        
+        for (int j = 0; j < NUM_ALGORITHMS; j++) {
+            AlgorithmBenchmark& current_benchmark = benchmarks[j];
+
+            CommomParams commomParam;
+            
+            void* context = current_benchmark.setup_function(&commomParam);
+            if (context == NULL) {
+                Serial.print("Failed to allocate context for ");
+                Serial.println(current_benchmark.algorithm.algorithName);
+                continue; 
+            }
+
+            PerformanceMetrics result = measurePerformance(
+                current_benchmark.benchmark_function, 
+                context
+            );
+
+            result.algorithm = current_benchmark.algorithm;
+            result.key = commomParam.key;
+            result.plaintext = commomParam.plaintext;
+
+            displayAndSaveMetric(dataFile, result); 
+            
+            current_benchmark.teardown_function(context);
+        }
+    }
+    
+    Serial.println("---------------------------------------------------------------------------------------");
+    
+    if (dataFile) {
+        dataFile.println("---------------------------------------------------------------------------------------");
+        dataFile.close();
+        Serial.println("Resultados salvos no cartão SD: results.txt");
+    }
+    
+    readAndDisplayFile(RESULTS_FILENAME);
 }
 
 void loop() {
-  // Nothing to do here
+  
 }

@@ -1,6 +1,7 @@
 #include "speck.h"
 #include <Arduino.h>
 #include <string.h>
+#include "utils/utils.h"
 
 #define ROR(x, r) ((x >> r) | (x << (64 - r)))
 #define ROL(x, r) ((x << r) | (x >> (64 - r)))
@@ -54,14 +55,21 @@ void string_to_blocks(const char* str, uint64_t blocks[2]) {
     memcpy(blocks, str, 16);
 }
 
-void useSpeck(uint64_t plaintext[2], uint64_t key[2]) {
-    // Test case 1: Simple text
-    
-    uint64_t ciphertext[2], decrypted[2];
-    encrypt(ciphertext, plaintext, key);
-    decrypt(decrypted, ciphertext, key);
-    // Verify
-    
-    Serial.print("\n");
-    
+void useSpeck(uint64_t plaintext[2], uint64_t key[2], AlgorithmReturn* algorithmReturn) {
+   uint64_t ciphertext[2], decrypted[2];
+
+   encrypt(ciphertext, plaintext, key);
+   algorithmReturn->encryptionTime = millis(); 
+   
+   const size_t size = 2 * sizeof(uint64_t);
+   algorithmReturn->encryptedData = malloc(size);
+   memcpy(algorithmReturn->encryptedData, ciphertext, size);
+
+   decrypt(decrypted, ciphertext, key);
+   
+   if (memcmp(plaintext, decrypted, 16) == 0) {
+      algorithmReturn->success = true;
+   } else {
+      algorithmReturn->success = false;
+   }
 }

@@ -7,31 +7,32 @@
 #include "algorithms/gift64/GIFT64.h"
 #include "algorithms/speck/speck.h"
 #include "algorithms/tiny_jambu/tiny_jambu.h"
+#include "Arduino.h"
 
-void speck_wrapper(void* context) {
+void speck_wrapper(void* context, AlgorithmReturn* algorithmReturn) {
     SpeckParams* params = (SpeckParams*)context;
-    useSpeck(params->plaintext, params->key); 
+    useSpeck(params->plaintext, params->key, algorithmReturn); 
 }
 
-void chacha20_wrapper(void* context) {
+void chacha20_wrapper(void* context, AlgorithmReturn* algorithmReturn) {
   ChaCha20Params* params = (ChaCha20Params*)context;
-  useChaCha20(params->key, params->nonce, params->data);
+  useChaCha20(params->key, params->nonce, params->data, CHACHA20_DATA_SIZE, algorithmReturn);
 }
 
-void gift64_wrapper(void* context) {
+void gift64_wrapper(void* context, AlgorithmReturn* algorithmReturn) {
   Gift64Params* params = (Gift64Params*)context;
-  useGift64(params->plaintext, params->key);
+  useGift64(params->plaintext, params->key, algorithmReturn);
 }
 
 
-void elephant_wrapper(void* context) {
+void elephant_wrapper(void* context, AlgorithmReturn* algorithmReturn) {
   ElephantParams* params = (ElephantParams*)context;
-  useElephant(params->key, params->nonce, params->plaintext, NULL);
+  useElephant(params->key, params->nonce, params->plaintext, NULL, algorithmReturn);
 }
 
-void tiny_jambu_wrapper(void *context) {
+void tiny_jambu_wrapper(void *context, AlgorithmReturn* algorithmReturn) {
   TinyJambuParams* params = (TinyJambuParams*)context;
-  useTinyJambu(params->plaintext, params->key, params->nonce, "");
+  useTinyJambu(params->plaintext, params->key, params->nonce, params->add, algorithmReturn);
 }
 
 // =================================================================
@@ -39,11 +40,13 @@ void tiny_jambu_wrapper(void *context) {
 // =================================================================
 
 // --- For Speck ---
-void* setup_speck() {
+void* setup_speck(CommomParams* commonsParams) {
     SpeckParams* params = (SpeckParams*)malloc(sizeof(SpeckParams));
     if (!params) return NULL;
     params->plaintext = createUint64List(2);
     params->key = createUint64List(2);
+    commonsParams->plaintext = params->plaintext;
+    commonsParams->key = params-> key;
     return params;
 }
 
@@ -55,12 +58,14 @@ void teardown_speck(void* context) {
 }
 
 // --- For ChaCha20 ---
-void* setup_chacha20() {
+void* setup_chacha20(CommomParams* commonsParams) {
     ChaCha20Params* params = (ChaCha20Params*)malloc(sizeof(ChaCha20Params));
     if (!params) return NULL;
-    params->data = createUint8List(8);
+    params->data = createUint8List(CHACHA20_DATA_SIZE);
     params->nonce = createUint8List(12);
     params->key = createUint8List(32);
+    commonsParams->plaintext = params->data;
+    commonsParams->key = params->key;
     return params;
 }
 
@@ -73,12 +78,14 @@ void teardown_chacha20(void* context) {
 }
 
 // --- For Gift64 ---
-void* setup_gift64() {
+void* setup_gift64(CommomParams* commonsParams) {
     Gift64Params* params = (Gift64Params*)malloc(sizeof(Gift64Params));
     if (!params) return NULL;
 
-    params->plaintext = (uint64_t)createUint64List(1);; // Or some random value
-    params->key = (uint16_t*)createUint8List(16); // Assuming key is 128-bit
+    params->plaintext = (uint64_t)createUint64List(1); // Or some random value
+    params->key = createUint16List(8); // Assuming key is 128-bit
+    commonsParams->plaintext = params->plaintext;
+    commonsParams->key = params->key;
     return params;
 }
 
@@ -90,7 +97,7 @@ void teardown_gift64(void* context) {
 }
 
 // --- For Elephant ---
-void* setup_elephant() {
+void* setup_elephant(CommomParams* commonsParams) {
     ElephantParams* params = (ElephantParams*)malloc(sizeof(ElephantParams));
     
     if (!params) {
@@ -109,6 +116,8 @@ void* setup_elephant() {
     generate_random_bytes(params->nonce, 12);
     generate_random_bytes(params->plaintext, 16);
    
+    commonsParams->plaintext = params->plaintext;
+    commonsParams->key = params->key;
     return params;
 }
 
@@ -119,27 +128,34 @@ void teardown_elephant(void* context) {
 }
 
 // --- For TinyJambu ---
-void* setup_tinyjambu() {
+void* setup_tinyjambu(CommomParams* commonsParams) {
     TinyJambuParams* params = (TinyJambuParams*)malloc(sizeof(TinyJambuParams));
     if (!params) return NULL;
 
     uint8_t* temp_list;
 
-    temp_list = createUint8List(8); 
-    if (!temp_list) { free(params); return NULL; }
-    params->plaintext = convertUint8ToChar(temp_list, 8);
-    free(temp_list);
-
     temp_list = createUint8List(32); 
     if (!temp_list) { free(params); return NULL; }
-    params->key = convertUint8ToChar(temp_list, 32);
+    params->plaintext = convertUint8ToChar(temp_list, 32);
     free(temp_list);
 
-    temp_list = createUint8List(32);
+    temp_list = createUint8List(16); 
     if (!temp_list) { free(params); return NULL; }
-    params->nonce = convertUint8ToChar(temp_list, 32);
-    free(temp_list); 
+    params->key = convertUint8ToChar(temp_list, 16);
+    free(temp_list);
+
+    temp_list = createUint8List(12);
+    if (!temp_list) { free(params); return NULL; }
+    params->nonce = convertUint8ToChar(temp_list, 12);
+    free(temp_list);
+
+    temp_list = createUint8List(8);
+    if (!temp_list) { free(params); return NULL; }
+    params->add = convertUint8ToChar(temp_list, 8);
+    free(temp_list);
     
+    commonsParams->plaintext = params->plaintext;
+    commonsParams->key = params->key;
     return params;
 }
 

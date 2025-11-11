@@ -10,12 +10,13 @@
             "includePath": [
                 "/home/davi/codes/estudos/c/project/include",
                 "/home/davi/codes/estudos/c/project/src",
+                "/home/davi/codes/estudos/c/project/.pio/libdeps/mega/SD/src",
+                "/home/davi/.platformio/packages/framework-arduino-avr/libraries/SPI/src",
                 "/home/davi/.platformio/packages/framework-arduino-avr/cores/arduino",
                 "/home/davi/.platformio/packages/framework-arduino-avr/variants/mega",
                 "/home/davi/codes/estudos/c/project/.pio/libdeps/mega/Unity/src",
                 "/home/davi/.platformio/packages/framework-arduino-avr/libraries/EEPROM/src",
                 "/home/davi/.platformio/packages/framework-arduino-avr/libraries/HID/src",
-                "/home/davi/.platformio/packages/framework-arduino-avr/libraries/SPI/src",
                 "/home/davi/.platformio/packages/framework-arduino-avr/libraries/SoftwareSerial/src",
                 "/home/davi/.platformio/packages/framework-arduino-avr/libraries/Wire/src",
                 ""
@@ -25,12 +26,13 @@
                 "path": [
                     "/home/davi/codes/estudos/c/project/include",
                     "/home/davi/codes/estudos/c/project/src",
+                    "/home/davi/codes/estudos/c/project/.pio/libdeps/mega/SD/src",
+                    "/home/davi/.platformio/packages/framework-arduino-avr/libraries/SPI/src",
                     "/home/davi/.platformio/packages/framework-arduino-avr/cores/arduino",
                     "/home/davi/.platformio/packages/framework-arduino-avr/variants/mega",
                     "/home/davi/codes/estudos/c/project/.pio/libdeps/mega/Unity/src",
                     "/home/davi/.platformio/packages/framework-arduino-avr/libraries/EEPROM/src",
                     "/home/davi/.platformio/packages/framework-arduino-avr/libraries/HID/src",
-                    "/home/davi/.platformio/packages/framework-arduino-avr/libraries/SPI/src",
                     "/home/davi/.platformio/packages/framework-arduino-avr/libraries/SoftwareSerial/src",
                     "/home/davi/.platformio/packages/framework-arduino-avr/libraries/Wire/src",
                     ""

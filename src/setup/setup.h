@@ -1,8 +1,10 @@
 #ifndef CRYPTO_WRAPPERS_H
 #define CRYPTO_WRAPPERS_H
+#define CHACHA20_DATA_SIZE 8
 
 #include <stdint.h> // For uint64_t, uint8_t, uint32_t, uint16_t
 #include "utils/utils.h" // For BYTE, SIZE, and prototypes of use...() functions
+#include "structs/structs.h"
 
 typedef unsigned char BYTE;
 typedef unsigned long long SIZE;
@@ -14,6 +16,7 @@ typedef unsigned long long SIZE;
 typedef struct {
     uint64_t* plaintext;
     uint64_t* key;
+    void* decryption_key; 
 } SpeckParams;
 
 // --- ChaCha20 ---
@@ -42,40 +45,41 @@ typedef struct {
   char* plaintext;
   char* key;
   char* nonce;
+  char* add;
 } TinyJambuParams;
 
 // =================================================================
 // 2. WRAPPER FUNCTIONS
 // =================================================================
 
-void speck_wrapper(void* context);
-void chacha20_wrapper(void* context);
-void gift64_wrapper(void* context);
-void elephant_wrapper(void* context);
-void tiny_jambu_wrapper(void *context);
+void speck_wrapper(void* context, AlgorithmReturn* algorithmReturn);
+void chacha20_wrapper(void* context, AlgorithmReturn* algorithmReturn);
+void gift64_wrapper(void* context, AlgorithmReturn* algorithmReturn);
+void elephant_wrapper(void* context, AlgorithmReturn* algorithmReturn);
+void tiny_jambu_wrapper(void *context, AlgorithmReturn* algorithmReturn);
 
 // =================================================================
 // 3. SETUP & TEARDOWN FUNCTIONS
 // =================================================================
 
 // --- For Speck ---
-void* setup_speck(void);
+void* setup_speck(CommomParams* commomParams);
 void teardown_speck(void* context);
 
 // --- For ChaCha20 ---
-void* setup_chacha20(void);
+void* setup_chacha20(CommomParams* commomParams);
 void teardown_chacha20(void* context);
 
 // --- For Gift64 ---
-void* setup_gift64(void);
+void* setup_gift64(CommomParams* commomParams);
 void teardown_gift64(void* context);
 
 // --- For Elephant ---
-void* setup_elephant(void);
+void* setup_elephant(CommomParams* commomParams);
 void teardown_elephant(void* context);
 
 // --- For TinyJambu ---
-void* setup_tinyjambu(void);
+void* setup_tinyjambu(CommomParams* commomParams);
 void teardown_tinyjambu(void* context);
 
 // =================================================================

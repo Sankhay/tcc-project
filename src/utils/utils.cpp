@@ -72,6 +72,7 @@ uint32_t* createUint32List(int size) {
   return list;
 }
 
+// Corrected version of your function
 uint64_t* createUint64List(int size) {
   uint64_t* list = (uint64_t*)malloc(size * sizeof(uint64_t));
   
@@ -80,9 +81,12 @@ uint64_t* createUint64List(int size) {
   }
   
   for (int i = 0; i < size; i++) {
-    uint64_t high_bits = (uint64_t)random(4294967295) << 32;
-    uint64_t low_bits = (uint64_t)random(4294967295);
-    list[i] = high_bits | low_bits;
+    // Create 32 random bits by combining two 16-bit randoms
+    uint32_t high_32 = ((uint32_t)random(0xFFFF) << 16) | (uint32_t)random(0xFFFF);
+    uint32_t low_32 = ((uint32_t)random(0xFFFF) << 16) | (uint32_t)random(0xFFFF);
+    
+    // Combine them into a 64-bit number
+    list[i] = ((uint64_t)high_32 << 32) | low_32;
   }
 
   return list;
