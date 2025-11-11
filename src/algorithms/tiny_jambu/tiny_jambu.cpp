@@ -20,8 +20,6 @@
 #define NROUND1 128*5 
 #define NROUND2 128*10
 
-void string2hexString(unsigned char* input, int clen, char* output);
-
 void useTinyJambu(unsigned char plaintext[CRYPTO_BYTES], unsigned char key[TJ_CRYPTO_KEYBYTES], unsigned char nonce[TJ_CRYPTO_NPUBBYTES], unsigned char add[TJ_CRYPTO_ABYTES], AlgorithmReturn* algorithmReturn) {
         
         unsigned long long mlen;
@@ -232,32 +230,4 @@ int crypto_aead_decrypt_tiny_jambu(
         for (tj_j = 0; tj_j < 8; tj_j++) { check |= (mac[tj_j] ^ c[clen - 8 + tj_j]); }
         if (check == 0) return 0;  
         else return -1;
-}
-
-
-void string2hexString(unsigned char* input, int clen, char* output)
-{
-    const char* hex_chars = "0123456789ABCDEF";
-    
-    for (int i = 0; i < clen; i++) {
-        unsigned char byte = input[i];
-        
-        *output++ = hex_chars[(byte >> 4) & 0x0F];
-        
-        *output++ = hex_chars[byte & 0x0F];
-    }    
-   *output = '\0';
-}
-
-void *hextobyte(char *hexstring, unsigned char* bytearray ) {
-
-    int i;
-
-    int str_len = strlen(hexstring);
-
-    for (i = 0; i < (str_len / 2); i++) {
-        // Corrected: Use %02hhx for unsigned char*
-        sscanf(hexstring + 2*i, "%02hhx", &bytearray[i]);
-    }
-
 }

@@ -39,12 +39,10 @@ static const uint8_t Constant[49] = {
 static void FreeKeySchedule(uint16_t ** W) {
     if (!W) return;
     
-    // Start from i=1 because W[0] is the original 'key' pointer
-    // and must not be freed here.
     for (int i = 1; i < 28; i++) {
-        free(W[i]); // Free each 16-byte round key
+        free(W[i]);
     }
-    free(W); // Free the main array of pointers
+    free(W); 
 }
 
 static uint64_t SubCells(uint64_t x){
@@ -213,13 +211,11 @@ void useGift64(uint64_t plaintext, uint16_t key[8], AlgorithmReturn* algorithmRe
     algorithmReturn->encryptedData = malloc(sizeof(uint64_t));
 
     if (algorithmReturn->encryptedData != NULL) {
-        // 2. CÓPIA SEGURA: Agora o ponteiro aponta para a memória alocada.
         memcpy(algorithmReturn->encryptedData, &EncryptedValue, sizeof(uint64_t));
     } else {
         Serial.println("não alocou memoria");
 
     }
-    //memcpy(algorithmReturn->encryptedData, &EncryptedValue, sizeof(uint64_t));
     
     uint64_t DecryptedValue = GIFT64_Decryption(EncryptedValue, key);
     algorithmReturn->success = (plaintext == DecryptedValue);

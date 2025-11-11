@@ -36,10 +36,10 @@ struct Algorithm elephant = {"Elephant", 16 * sizeof(unsigned char), 8 * sizeof(
 struct Algorithm tinyJambu = {"TINYJAMBU", 32 * sizeof(uint8_t), 16 * sizeof(uint16_t), 40 * sizeof(unsigned char)};
 // --- The Array of All Algorithms to Test ---
 AlgorithmBenchmark benchmarks[] = {
-    {speck,      speck_wrapper,      setup_speck,      teardown_speck},
+    //{speck,      speck_wrapper,      setup_speck,      teardown_speck},
     //{chacha20,   chacha20_wrapper,   setup_chacha20,   teardown_chacha20},
     //{gift64,     gift64_wrapper,     setup_gift64,     teardown_gift64},
-    //{elephant,   elephant_wrapper,   setup_elephant,   teardown_elephant},
+    {elephant,   elephant_wrapper,   setup_elephant,   teardown_elephant},
     //{tinyJambu,  tiny_jambu_wrapper, setup_tinyjambu,  teardown_tinyjambu}
 };
 
