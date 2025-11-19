@@ -32,7 +32,6 @@ void decrypt(uint64_t pt[2],
    uint64_t y = ct[0], x = ct[1];
    uint64_t b = K[0], a = K[1];
    
-   // Precompute all round keys (same as encryption)
    uint64_t round_keys[ROUNDS];
    round_keys[0] = b;
    
@@ -41,7 +40,6 @@ void decrypt(uint64_t pt[2],
       round_keys[i + 1] = b;
    }
    
-   // Apply inverse operations in reverse order
    for (int i = ROUNDS - 1; i > 0; i--) {
       RI(x, y, round_keys[i]);
    }
@@ -49,10 +47,6 @@ void decrypt(uint64_t pt[2],
    
    pt[0] = y;
    pt[1] = x;
-}
-
-void string_to_blocks(const char* str, uint64_t blocks[2]) {
-    memcpy(blocks, str, 16);
 }
 
 void useSpeck(uint64_t plaintext[2], uint64_t key[2], AlgorithmReturn* algorithmReturn) {

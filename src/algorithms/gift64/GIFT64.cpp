@@ -51,7 +51,6 @@ static uint64_t SubCells(uint64_t x){
     uint64_t value, sub_value;
     for(i = 0; i < 16; i++ ) {
         value = (x >> 4*i) & 0x0f;
-        //printf("SubCells value: %"SCNd8 "\n", value);
         sub_value = s_box[value];
         y = (sub_value << 4*i) ^ y;
     }    

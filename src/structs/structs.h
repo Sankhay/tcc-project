@@ -35,11 +35,12 @@ struct AlgorithmBenchmark {
 
 struct PerformanceMetrics {
   Algorithm algorithm;
-  int ramUsedBytes;
   void* key;
   void* plaintext;
   AlgorithmReturn algorithmReturn;
   unsigned long startTime;
   unsigned long endTime;
 };
+
+
 

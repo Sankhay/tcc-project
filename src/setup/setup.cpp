@@ -35,11 +35,6 @@ void tiny_jambu_wrapper(void *context, AlgorithmReturn* algorithmReturn) {
   useTinyJambu(params->plaintext, params->key, params->nonce, params->add, algorithmReturn);
 }
 
-// =================================================================
-// 2. SETUP & TEARDOWN FUNCTIONS (The new part)
-// =================================================================
-
-// --- For Speck ---
 void* setup_speck(CommomParams* commonsParams) {
     SpeckParams* params = (SpeckParams*)malloc(sizeof(SpeckParams));
     if (!params) return NULL;
@@ -57,7 +52,6 @@ void teardown_speck(void* context) {
     free(params);
 }
 
-// --- For ChaCha20 ---
 void* setup_chacha20(CommomParams* commonsParams) {
     ChaCha20Params* params = (ChaCha20Params*)malloc(sizeof(ChaCha20Params));
     if (!params) return NULL;
@@ -77,13 +71,12 @@ void teardown_chacha20(void* context) {
     free(params);
 }
 
-// --- For Gift64 ---
 void* setup_gift64(CommomParams* commonsParams) {
     Gift64Params* params = (Gift64Params*)malloc(sizeof(Gift64Params));
     if (!params) return NULL;
 
-    params->plaintext = (uint64_t)createUint64List(1); // Or some random value
-    params->key = createUint16List(8); // Assuming key is 128-bit
+    params->plaintext = (uint64_t)createUint64List(1);
+    params->key = createUint16List(8); 
     commonsParams->plaintext = params->plaintext;
     commonsParams->key = params->key;
     return params;
@@ -96,7 +89,6 @@ void teardown_gift64(void* context) {
     free(params);
 }
 
-// --- For Elephant ---
 void* setup_elephant(CommomParams* commonsParams) {
     ElephantParams* params = (ElephantParams*)malloc(sizeof(ElephantParams));
     
@@ -111,7 +103,6 @@ void* setup_elephant(CommomParams* commonsParams) {
       return NULL;
     }
     
-
     generate_random_bytes(params->key, 16);
     generate_random_bytes(params->nonce, 12);
     generate_random_bytes(params->plaintext, 16);
@@ -127,7 +118,6 @@ void teardown_elephant(void* context) {
     free(params);
 }
 
-// --- For TinyJambu ---
 void* setup_tinyjambu(CommomParams* commonsParams) {
     TinyJambuParams* params = (TinyJambuParams*)malloc(sizeof(TinyJambuParams));
     if (!params) return NULL;
@@ -169,14 +159,14 @@ void teardown_tinyjambu(void* context) {
 
 
 char* convertUint8ToChar(uint8_t* uint8List, int length) {
-    char *charList = (char *)malloc(length + 1); // +1 for null terminator
-    if (!charList) return NULL; // Good to check malloc success
+    char *charList = (char *)malloc(length + 1);
+    if (!charList) return NULL; 
 
     for(int i = 0; i < length; i++) {
         charList[i] = (char)uint8List[i];
     }
     
-    charList[length] = '\0'; // <-- THE FIX
+    charList[length] = '\0'; 
     
     return charList;
 }
